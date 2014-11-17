@@ -37,6 +37,22 @@ type Ticket struct {
 	BrandID             *float64            `json:"brand_id,omitempty"`
 	CreatedAt           *string             `json:"created_at,omitempty"`
 	UpdatedAt           *string             `json:"updated_at,omitempty"`
+	Comment             *TicketComment      `json:"comment,omitempty"`
+	Requester           *TicketRequester    `json:"requester,omitempty"`
+}
+
+// Ticket Single Response
+type TicketSingleResponse struct {
+	Ticket *Ticket `json:"ticket"`
+}
+
+type TicketComment struct {
+	Body string `json:"body,omitempty"`
+}
+
+type TicketRequester struct {
+	Name  string `json:"name,omitempty"`
+	Email string `json:"email,omitempty"`
 }
 
 // Via struct
@@ -262,11 +278,34 @@ func (s *TicketService) GetOne(id string) (*Ticket, *Response, error) {
 		return nil, nil, err
 	}
 
-	ticket := new(Ticket)
-	resp, err := s.client.Do(req, &ticket)
+	ticketSingleResponse := new(TicketSingleResponse)
+	resp, err := s.client.Do(req, &ticketSingleResponse)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return ticket, resp, err
+	return ticketSingleResponse.Ticket, resp, err
+}
+
+// Create func creates a single Ticket
+func (s *TicketService) Create(t *Ticket) (*Ticket, error) {
+	var ticket *Ticket
+	var err error
+
+	tw := &TicketSingleResponse{Ticket: t}
+	url := fmt.Sprintf("tickets.json")
+
+	req, err := s.client.NewRequest("POST", url, tw)
+	if err != nil {
+		return ticket, err
+	}
+
+	result := new(TicketSingleResponse)
+	_, err = s.client.Do(req, result)
+	if err != nil {
+		return ticket, err
+	}
+
+	ticket = result.Ticket
+	return ticket, err
 }
